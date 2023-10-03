@@ -5364,7 +5364,7 @@ MODULE module_mp_thompson
       REAL:: n_local, w_local
       INTEGER:: i, j, k, l, m, n
       REAL:: A, B, C, D, t, u, x1, x2, y1, y2, nx, wy, fraction
-
+      REAL:: lower_lim_nuc_frac
 
 !     ta_Na = (/10.0, 31.6, 100.0, 316.0, 1000.0, 3160.0, 10000.0/)  ntb_arc
 !     ta_Ww = (/0.01, 0.0316, 0.1, 0.316, 1.0, 3.16, 10.0, 31.6, 100.0/)  ntb_arw
@@ -5410,15 +5410,14 @@ MODULE module_mp_thompson
 !.. sea salts.
       l = 3
       m = 2
-      
+      lower_lim_nuc_frac = 0.0
+
       if (lsm_in.lt.1) then
-         l = 4
-         m = 1
+         lower_lim_nuc_frac = 0.15
       endif
 
       if (lsm_in.gt.1) then
-         l = 4
-         m = 1
+         lower_lim_nuc_frac = 0.15
       endif
 
       A = tnccn_act(i-1,j-1,k,l,m)
@@ -5435,7 +5434,8 @@ MODULE module_mp_thompson
 !     u = (w_local-ta_Ww(j-1))/(ta_Ww(j)-ta_Ww(j-1))
 
       fraction = (1.0-t)*(1.0-u)*A + t*(1.0-u)*B + t*u*C + (1.0-t)*u*D
-
+      fraction = MAX(fraction, lower_lim_nuc_frac)
+      
 !     if (NCCN*fraction .gt. 0.75*Nt_c_max) then
 !        write(*,*) ' DEBUG-GT ', n_local, w_local, Tt, i, j, k
 !     endif
@@ -5855,6 +5855,7 @@ MODULE module_mp_thompson
          endif
          lamc = (nc(k)*am_r*g_ratio(inu_c)/rc(k))**obmr
          re_qc1d(k) = SNGL(0.5D0 * DBLE(3.+inu_c)/lamc)
+         if (lsml .ne. 1) re_qc1d(k) = max(re_qc1d(k), 7.0E-6)
       enddo
       endif
 
