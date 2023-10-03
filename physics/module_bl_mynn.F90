@@ -3276,7 +3276,6 @@ CONTAINS
 !
 !   **  pdk(1)+pdk(2) corresponds to pdk1.  **
     pdk(kts) = pdk1 - pdk(kts+1)
-    pdk(kts+1) = max(pdk1,pdk(kts+1))
 
 !!    pdt(kts) = pdt1 -pdt(kts+1)
 !!    pdq(kts) = pdq1 -pdq(kts+1)
@@ -3624,7 +3623,7 @@ CONTAINS
     real(kind_phys):: qsl,esat,qsat,dqsl,cld0,q1k,qlk,eq1,qll,           &
          &q2p,pt,rac,qt,t,xl,rsl,cpm,Fng,qww,alpha,beta,bb,              &
          &ls,wt,qpct,cld_factor,fac_damp,liq_frac,ql_ice,ql_water,       &
-         &qmq,qsat_tk,q1_rh,rh_hack,dzm1,zsl
+         &qmq,qsat_tk,q1_rh,rh_hack,dzm1,zsl,maxqc
     real(kind_phys), parameter :: qpct_sfc=0.02
     real(kind_phys), parameter :: qpct_pbl=0.03
     real(kind_phys), parameter :: qpct_trp=0.04
@@ -3883,15 +3882,16 @@ CONTAINS
            ! Specify hydrometeors
            ! JAYMES- this option added 8 May 2015
            ! The cloud water formulations are taken from CB02, Eq. 8.
+           maxqc = max(qw(k) - qsat_tk, 0.0)
            if (q1k < 0.) then        !unsaturated
               ql_water = sgm(k)*exp(1.2*q1k-1.)
               ql_ice   = sgm(k)*exp(1.2*q1k-1.)
            elseif (q1k > 2.) then    !supersaturated
-              ql_water = sgm(k)*q1k
-              ql_ice   = sgm(k)*q1k
+              ql_water = min(sgm(k)*q1k, maxqc)
+              ql_ice   =     sgm(k)*q1k
            else                      !slightly saturated (0 > q1 < 2)
-              ql_water = sgm(k)*(exp(-1.) + 0.66*q1k + 0.086*q1k**2)
-              ql_ice   = sgm(k)*(exp(-1.) + 0.66*q1k + 0.086*q1k**2)
+              ql_water = min(sgm(k)*(exp(-1.) + 0.66*q1k + 0.086*q1k**2), maxqc)
+              ql_ice   =     sgm(k)*(exp(-1.) + 0.66*q1k + 0.086*q1k**2)
            endif
 
            !In saturated grid cells, use average of SGS and resolved values
