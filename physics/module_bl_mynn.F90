@@ -3624,9 +3624,9 @@ CONTAINS
          &q2p,pt,rac,qt,t,xl,rsl,cpm,Fng,qww,alpha,beta,bb,              &
          &ls,wt,qpct,cld_factor,fac_damp,liq_frac,ql_ice,ql_water,       &
          &qmq,qsat_tk,q1_rh,rh_hack,dzm1,zsl,maxqc
-    real(kind_phys), parameter :: qpct_sfc=0.02
-    real(kind_phys), parameter :: qpct_pbl=0.03
-    real(kind_phys), parameter :: qpct_trp=0.04
+    real(kind_phys), parameter :: qpct_sfc=0.025
+    real(kind_phys), parameter :: qpct_pbl=0.030
+    real(kind_phys), parameter :: qpct_trp=0.040
     real(kind_phys), parameter :: rhcrit  =0.83 !for hom pdf min sigma
     integer :: i,j,k
 
