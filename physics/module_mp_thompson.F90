@@ -1416,6 +1416,8 @@ MODULE module_mp_thompson
                qcten1(k) = 0.
             endif initialize_extended_diagnostics
          enddo
+         
+         lsml = lsm(i,j)
          if (is_aerosol_aware .or. merra2_aerosol_aware) then
             do k = kts, kte
                nc1d(k) = nc(i,k,j)
@@ -1423,7 +1425,6 @@ MODULE module_mp_thompson
                nifa1d(k) = nifa(i,k,j)
             enddo
          else
-            lsml = lsm(i,j)
             do k = kts, kte
                if(lsml == 1) then
                  nc1d(k) = Nt_c_l/rho(k)
@@ -3581,7 +3582,7 @@ MODULE module_mp_thompson
 !+---+-----------------------------------------------------------------+ !  DROPLET NUCLEATION
            if (clap .gt. eps) then
             if (is_aerosol_aware .or. merra2_aerosol_aware) then
-               xnc = MAX(2., activ_ncloud(temp(k), w1d(k)+rand3, nwfa(k)))
+               xnc = MAX(2., activ_ncloud(temp(k), w1d(k)+rand3, nwfa(k), lsml))
             else
                if(lsml == 1) then
                  xnc = Nt_c_l
@@ -5358,14 +5359,15 @@ MODULE module_mp_thompson
 ! TO_DO ITEM:  For radiation cooling producing fog, in which case the
 !.. updraft velocity could easily be negative, we could use the temp
 !.. and its tendency to diagnose a pretend postive updraft velocity.
-      real function activ_ncloud(Tt, Ww, NCCN)
+      real function activ_ncloud(Tt, Ww, NCCN, lsm_in)
 
       implicit none
       REAL, INTENT(IN):: Tt, Ww, NCCN
+      INTEGER, INTENT(IN):: lsm_in
       REAL:: n_local, w_local
       INTEGER:: i, j, k, l, m, n
       REAL:: A, B, C, D, t, u, x1, x2, y1, y2, nx, wy, fraction
-
+      REAL:: lower_lim_nuc_frac
 
 !     ta_Na = (/10.0, 31.6, 100.0, 316.0, 1000.0, 3160.0, 10000.0/)  ntb_arc
 !     ta_Ww = (/0.01, 0.0316, 0.1, 0.316, 1.0, 3.16, 10.0, 31.6, 100.0/)  ntb_arw
@@ -5411,6 +5413,15 @@ MODULE module_mp_thompson
 !.. sea salts.
       l = 3
       m = 2
+      
+      lower_lim_nuc_frac = 0.
+      if (lsm_in .eq. 1) then       ! land
+         lower_lim_nuc_frac = 0.
+      else if (lsm_in .eq. 0) then  ! water
+         lower_lim_nuc_frac = 0.15
+      else
+         lower_lim_nuc_frac = 0.15  ! catch-all for anything else
+      endif
 
       A = tnccn_act(i-1,j-1,k,l,m)
       B = tnccn_act(i,j-1,k,l,m)
@@ -5426,6 +5437,7 @@ MODULE module_mp_thompson
 !     u = (w_local-ta_Ww(j-1))/(ta_Ww(j)-ta_Ww(j-1))
 
       fraction = (1.0-t)*(1.0-u)*A + t*(1.0-u)*B + t*u*C + (1.0-t)*u*D
+      fraction = MAX(fraction, lower_lim_nuc_frac)
 
 !     if (NCCN*fraction .gt. 0.75*Nt_c_max) then
 !        write(*,*) ' DEBUG-GT ', n_local, w_local, Tt, i, j, k
