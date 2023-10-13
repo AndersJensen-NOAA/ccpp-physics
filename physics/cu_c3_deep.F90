@@ -2078,6 +2078,10 @@ contains
 
 !> - Call rain_evap_below_cloudbase() to calculate evaporation below cloud base
 
+!      call rain_evap_below_cloudbase(itf,ktf,its,ite,                    &
+!           kts,kte,ierr,kbcon,xmb,psur,xland,qo_cup,                     &
+!           po_cup,qes_cup,pwavo,edto,pwevo,pre,outt,outq)      !,outbuoy)
+
       k=1
 !$acc kernels
       do i=its,itf
@@ -4485,8 +4489,10 @@ endif
                endif
                if(k.gt.kbcon(i)+1)c1d(i,k)=clwdet*up_massdetr(i,k-1)
                if(k.gt.kbcon(i)+1)c1d_b(i,k)=clwdet*up_massdetr(i,k-1)
+               !if(is_deep.and.k.gt.kklev(i))then
                 c1d(i,k)=0.005
                 c1d_b(i,k)=0.005
+               !endif
 
                if(autoconv.eq.2) then
 ! 
