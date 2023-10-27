@@ -33,7 +33,7 @@ module mp_thompson
       subroutine mp_thompson_init(ncol, nlev, con_g, con_rd, con_eps,      &
                                   restart, imp_physics,                    &
                                   imp_physics_thompson, convert_dry_rho,   &
-                                  spechum, qc, qr, qi, qs, qg, ni, nr,     &
+                                  spechum, qa, qc, qr, qi, qs, qg, ni, nr, &
                                   is_aerosol_aware,  merra2_aerosol_aware, &
                                   nc, nwfa2d, nifa2d,                      &
                                   nwfa, nifa, tgrs, prsl, phil, area,      &
@@ -53,6 +53,7 @@ module mp_thompson
          ! Hydrometeors
          logical,                   intent(in   ) :: convert_dry_rho
          real(kind_phys),           intent(inout) :: spechum(:,:)
+         real(kind_phys),           intent(inout) :: qa(:,:)
          real(kind_phys),           intent(inout) :: qc(:,:)
          real(kind_phys),           intent(inout) :: qr(:,:)
          real(kind_phys),           intent(inout) :: qi(:,:)
@@ -142,6 +143,7 @@ module mp_thompson
 
          ! Ensure non-negative mass mixing ratios of all water variables
          where(spechum<0) spechum = 1.0E-10     ! COMMENT, gthompsn, spechum should *never* be identically zero.
+         where(qa<0)      qa = 0.0
          where(qc<0)      qc = 0.0
          where(qr<0)      qr = 0.0
          where(qi<0)      qi = 0.0
@@ -159,6 +161,7 @@ module mp_thompson
          qv = spechum/(1.0_kind_phys-spechum)
 
          if (convert_dry_rho) then
+           qa = qa/(1.0_kind_phys-spechum)
            qc = qc/(1.0_kind_phys-spechum)
            qr = qr/(1.0_kind_phys-spechum)
            qi = qi/(1.0_kind_phys-spechum)
@@ -319,7 +322,7 @@ module mp_thompson
 !>@{
       subroutine mp_thompson_run(ncol, nlev, con_g, con_rd,        &
                               con_eps, convert_dry_rho,            &
-                              spechum, qc, qr, qi, qs, qg, ni, nr, &
+                              spechum, qa, qc, qr, qi, qs, qg, ni, nr, &
                               is_aerosol_aware,                    &
                               merra2_aerosol_aware, nc, nwfa, nifa,&
                               nwfa2d, nifa2d, aero_ind_fdb,        &
@@ -351,6 +354,7 @@ module mp_thompson
          ! Hydrometeors
          logical,                   intent(in   ) :: convert_dry_rho
          real(kind_phys),           intent(inout) :: spechum(:,:)
+         real(kind_phys),           intent(inout) :: qa(:,:)
          real(kind_phys),           intent(inout) :: qc(:,:)
          real(kind_phys),           intent(inout) :: qr(:,:)
          real(kind_phys),           intent(inout) :: qi(:,:)
@@ -571,6 +575,7 @@ module mp_thompson
          qv = spechum/(1.0_kind_phys-spechum)
 
          if (convert_dry_rho) then
+           qa = qa/(1.0_kind_phys-spechum)
            qc = qc/(1.0_kind_phys-spechum)
            qr = qr/(1.0_kind_phys-spechum)
            qi = qi/(1.0_kind_phys-spechum)
@@ -688,7 +693,7 @@ module mp_thompson
          end if set_extended_diagnostic_pointers
          !> - Call mp_gt_driver() with or without aerosols, with or without effective radii, ...
          if (is_aerosol_aware .or. merra2_aerosol_aware) then
-            call mp_gt_driver(qv=qv, qc=qc, qr=qr, qi=qi, qs=qs, qg=qg, ni=ni, nr=nr,        &
+            call mp_gt_driver(qa=qa, qv=qv, qc=qc, qr=qr, qi=qi, qs=qs, qg=qg, ni=ni, nr=nr, &
                               nc=nc, nwfa=nwfa, nifa=nifa, nwfa2d=nwfa2d, nifa2d=nifa2d,     &
                               tt=tgrs, p=prsl, w=w, dz=dz, dt_in=dtstep, dt_inner=dt_inner,  &
                               sedi_semi=sedi_semi, decfl=decfl, lsm=islmsk,                  &
@@ -729,7 +734,7 @@ module mp_thompson
                               qiten3=qiten3, niten3=niten3, nrten3=nrten3, ncten3=ncten3,    &
                               qcten3=qcten3, pfils=pfils, pflls=pflls)
          else
-            call mp_gt_driver(qv=qv, qc=qc, qr=qr, qi=qi, qs=qs, qg=qg, ni=ni, nr=nr,        &
+            call mp_gt_driver(qa=qa, qv=qv, qc=qc, qr=qr, qi=qi, qs=qs, qg=qg, ni=ni, nr=nr, &
                               tt=tgrs, p=prsl, w=w, dz=dz, dt_in=dtstep, dt_inner=dt_inner,  &
                               sedi_semi=sedi_semi, decfl=decfl, lsm=islmsk,                  &
                               rainnc=rain_mp, rainncv=delta_rain_mp,                         &
@@ -778,6 +783,7 @@ module mp_thompson
          spechum = qv/(1.0_kind_phys+qv)
 
          if (convert_dry_rho) then
+           qa = qa/(1.0_kind_phys+qv)
            qc = qc/(1.0_kind_phys+qv)
            qr = qr/(1.0_kind_phys+qv)
            qi = qi/(1.0_kind_phys+qv)

@@ -980,7 +980,7 @@ MODULE module_mp_thompson
 !!This is a wrapper routine designed to transfer values from 3D to 1D.
 !!\section gen_mpgtdriver Thompson mp_gt_driver General Algorithm
 !> @{
-      SUBROUTINE mp_gt_driver(qv, qc, qr, qi, qs, qg, ni, nr, nc,     &
+      SUBROUTINE mp_gt_driver(qa, qv, qc, qr, qi, qs, qg, ni, nr, nc,     &
                               nwfa, nifa, nwfa2d, nifa2d,             &
                               tt, th, pii,                            &
                               p, w, dz, dt_in, dt_inner,              &
@@ -1031,7 +1031,7 @@ MODULE module_mp_thompson
                             ims,ime, jms,jme, kms,kme, &
                             its,ite, jts,jte, kts,kte
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
-                          qv, qc, qr, qi, qs, qg, ni, nr
+                          qa, qv, qc, qr, qi, qs, qg, ni, nr
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT):: &
                           tt, th
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(IN):: &
@@ -1092,7 +1092,7 @@ MODULE module_mp_thompson
 
 !..Local variables
       REAL, DIMENSION(kts:kte):: &
-                          qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d,     &
+                          qa1d, qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d,     &
                           nr1d, nc1d, nwfa1d, nifa1d,                   &
                           t1d, p1d, w1d, dz1d, rho, dBZ, pfil1, pfll1
 !..Extended diagnostics, single column arrays
@@ -1362,6 +1362,7 @@ MODULE module_mp_thompson
             p1d(k) = p(i,k,j)
             w1d(k) = w(i,k,j)
             dz1d(k) = dz(i,k,j)
+            qa1d(k) = qa(i,k,j)
             qv1d(k) = qv(i,k,j)
             qc1d(k) = qc(i,k,j)
             qi1d(k) = qi(i,k,j)
@@ -1436,7 +1437,7 @@ MODULE module_mp_thompson
          endif
 
 !> - Call mp_thompson()
-         call mp_thompson(qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d,     &
+         call mp_thompson(qa1d, qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d,     &
                       nr1d, nc1d, nwfa1d, nifa1d, t1d, p1d, w1d, dz1d,  &
                       lsml, pptrain, pptsnow, pptgraul, pptice, &
 #if ( WRF_CHEM == 1 )
@@ -1518,6 +1519,7 @@ MODULE module_mp_thompson
          endif
 
          do k = kts, kte
+            qa(i,k,j) = qa1d(k)
             qv(i,k,j) = qv1d(k)
             qc(i,k,j) = qc1d(k)
             qi(i,k,j) = qi1d(k)
@@ -1856,7 +1858,7 @@ MODULE module_mp_thompson
 !! Thompson et al. (2004, 2008)\cite Thompson_2004 \cite Thompson_2008.
 !>\section gen_mp_thompson  mp_thompson General Algorithm
 !> @{
-      subroutine mp_thompson (qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d,    &
+      subroutine mp_thompson (qa1d, qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d,    &
                           nr1d, nc1d, nwfa1d, nifa1d, t1d, p1d, w1d, dzq,  &
                           lsml, pptrain, pptsnow, pptgraul, pptice,        &
 #if ( WRF_CHEM == 1 )
@@ -1890,7 +1892,7 @@ MODULE module_mp_thompson
 !..Sub arguments
       INTEGER, INTENT(IN):: kts, kte, ii, jj
       REAL, DIMENSION(kts:kte), INTENT(INOUT):: &
-                          qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
+                          qa1d, qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
                           nr1d, nc1d, nwfa1d, nifa1d, t1d
       REAL, DIMENSION(kts:kte), INTENT(OUT):: pfil1, pfll1
       REAL, DIMENSION(kts:kte), INTENT(IN):: p1d, w1d, dzq
