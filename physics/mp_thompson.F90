@@ -33,7 +33,7 @@ module mp_thompson
       subroutine mp_thompson_init(ncol, nlev, con_g, con_rd, con_eps,      &
                                   restart, imp_physics,                    &
                                   imp_physics_thompson, convert_dry_rho,   &
-                                  spechum, qc, qr, qi, qs, qg, ni, nr,     &
+                                  spechum, qa, qc, qr, qi, qs, qg, ni, nr, &
                                   is_aerosol_aware,  merra2_aerosol_aware, &
                                   nc, nwfa2d, nifa2d,                      &
                                   nwfa, nifa, tgrs, prsl, phil, area,      &
@@ -54,6 +54,7 @@ module mp_thompson
          logical,                   intent(in   ) :: convert_dry_rho
          real(kind_phys),           intent(inout) :: spechum(:,:)
          real(kind_phys),           intent(inout) :: qc(:,:)
+         real(kind_phys),           intent(inout) :: qa(:,:)
          real(kind_phys),           intent(inout) :: qr(:,:)
          real(kind_phys),           intent(inout) :: qi(:,:)
          real(kind_phys),           intent(inout) :: qs(:,:)
@@ -89,6 +90,8 @@ module mp_thompson
 
          !
          real(kind_phys) :: qv(1:ncol,1:nlev)       ! kg kg-1 (water vapor mixing ratio)
+         real(kind_phys) :: qvs(1:ncol,1:nlev)       ! kg kg-1 (water vapor mixing ratio)
+         real(kind_phys) :: rh(1:ncol,1:nlev)       ! kg kg-1 (water vapor mixing ratio)
          real(kind_phys) :: hgt(1:ncol,1:nlev)      ! m
          real(kind_phys) :: rho(1:ncol,1:nlev)      ! kg m-3
          real(kind_phys) :: orho(1:ncol,1:nlev)     ! m3 kg-1
@@ -96,6 +99,18 @@ module mp_thompson
          !
          real (kind=kind_phys) :: h_01, z1, niIN3, niCCN3
          integer :: i, k
+
+         REAL:: ESL(1:ncol,1:nlev), X_RSLF(1:ncol,1:nlev)
+         REAL, PARAMETER:: C0= .611583699E03
+         REAL, PARAMETER:: C1= .444606896E02
+         REAL, PARAMETER:: C2= .143177157E01
+         REAL, PARAMETER:: C3= .264224321E-1
+         REAL, PARAMETER:: C4= .299291081E-3
+         REAL, PARAMETER:: C5= .203154182E-5
+         REAL, PARAMETER:: C6= .702620698E-8
+         REAL, PARAMETER:: C7= .379534310E-11
+         REAL, PARAMETER:: C8=-.321582393E-13
+
 
          ! Initialize the CCPP error handling variables
          errmsg = ''
@@ -124,6 +139,23 @@ module mp_thompson
             return
          end if
 
+!         if (mpirank==mpiroot) write(*,*) 'Filling qa AAJ'
+!         qa = 0.399
+
+!         X_RSLF = tgrs-273.16
+!         where(X_RSLF .lt. -80.0) X_RSLF = -80.0
+!         ESL = C0+X_RSLF*(C1+X_RSLF*(C2+X_RSLF*(C3+X_RSLF*(C4+X_RSLF*(C5+X_RSLF*(C6+X_RSLF*(C7+X_RSLF*C8)))))))
+!         ESL = MIN(ESL, prsl*0.15) 
+!         where(ESL .gt. prsl*0.15) ESL = prsl*01.5
+!         qvs = .622*ESL/max(1.e-4,(prsl-ESL))
+!         qvs = .622*ESL / (prsl-ESL)
+!         rh = qv/qvs
+
+!         where(rh .gt. 0.75) qa = 0.399
+!         where(tgrs .lt. 253.15) qa = 0.0
+
+
+
          ! Call Thompson init
          call thompson_init(is_aerosol_aware_in=is_aerosol_aware,              &
                             merra2_aerosol_aware_in=merra2_aerosol_aware,      &
@@ -142,6 +174,7 @@ module mp_thompson
 
          ! Ensure non-negative mass mixing ratios of all water variables
          where(spechum<0) spechum = 1.0E-10     ! COMMENT, gthompsn, spechum should *never* be identically zero.
+         where(qa<0)      qa = 0.0
          where(qc<0)      qc = 0.0
          where(qr<0)      qr = 0.0
          where(qi<0)      qi = 0.0
@@ -159,6 +192,7 @@ module mp_thompson
          qv = spechum/(1.0_kind_phys-spechum)
 
          if (convert_dry_rho) then
+           qa = qa/(1.0_kind_phys-spechum)
            qc = qc/(1.0_kind_phys-spechum)
            qr = qr/(1.0_kind_phys-spechum)
            qi = qi/(1.0_kind_phys-spechum)
@@ -319,7 +353,7 @@ module mp_thompson
 !>@{
       subroutine mp_thompson_run(ncol, nlev, con_g, con_rd,        &
                               con_eps, convert_dry_rho,            &
-                              spechum, qc, qr, qi, qs, qg, ni, nr, &
+                              spechum, qa, qc, qr, qi, qs, qg, ni, nr, &
                               is_aerosol_aware,                    &
                               merra2_aerosol_aware, nc, nwfa, nifa,&
                               nwfa2d, nifa2d, aero_ind_fdb,        &
@@ -352,6 +386,7 @@ module mp_thompson
          logical,                   intent(in   ) :: convert_dry_rho
          real(kind_phys),           intent(inout) :: spechum(:,:)
          real(kind_phys),           intent(inout) :: qc(:,:)
+         real(kind_phys),           intent(inout) :: qa(:,:)
          real(kind_phys),           intent(inout) :: qr(:,:)
          real(kind_phys),           intent(inout) :: qi(:,:)
          real(kind_phys),           intent(inout) :: qs(:,:)
@@ -571,6 +606,7 @@ module mp_thompson
          qv = spechum/(1.0_kind_phys-spechum)
 
          if (convert_dry_rho) then
+           qa = qa/(1.0_kind_phys-spechum)
            qc = qc/(1.0_kind_phys-spechum)
            qr = qr/(1.0_kind_phys-spechum)
            qi = qi/(1.0_kind_phys-spechum)
@@ -688,7 +724,7 @@ module mp_thompson
          end if set_extended_diagnostic_pointers
          !> - Call mp_gt_driver() with or without aerosols, with or without effective radii, ...
          if (is_aerosol_aware .or. merra2_aerosol_aware) then
-            call mp_gt_driver(qv=qv, qc=qc, qr=qr, qi=qi, qs=qs, qg=qg, ni=ni, nr=nr,        &
+            call mp_gt_driver(qv=qv, qa=qa, qc=qc, qr=qr, qi=qi, qs=qs, qg=qg, ni=ni, nr=nr,        &
                               nc=nc, nwfa=nwfa, nifa=nifa, nwfa2d=nwfa2d, nifa2d=nifa2d,     &
                               tt=tgrs, p=prsl, w=w, dz=dz, dt_in=dtstep, dt_inner=dt_inner,  &
                               sedi_semi=sedi_semi, decfl=decfl, lsm=islmsk,                  &
@@ -727,9 +763,10 @@ module mp_thompson
                               tprv_rev=tprv_rev, tten3=tten3,                                &
                               qvten3=qvten3, qrten3=qrten3, qsten3=qsten3, qgten3=qgten3,    &
                               qiten3=qiten3, niten3=niten3, nrten3=nrten3, ncten3=ncten3,    &
-                              qcten3=qcten3, pfils=pfils, pflls=pflls)
+                              qcten3=qcten3, pfils=pfils, pflls=pflls,                       &
+                              mpicomm=mpicomm, mpirank=mpirank, mpiroot=mpiroot)
          else
-            call mp_gt_driver(qv=qv, qc=qc, qr=qr, qi=qi, qs=qs, qg=qg, ni=ni, nr=nr,        &
+            call mp_gt_driver(qv=qv, qa=qa, qc=qc, qr=qr, qi=qi, qs=qs, qg=qg, ni=ni, nr=nr,        &
                               tt=tgrs, p=prsl, w=w, dz=dz, dt_in=dtstep, dt_inner=dt_inner,  &
                               sedi_semi=sedi_semi, decfl=decfl, lsm=islmsk,                  &
                               rainnc=rain_mp, rainncv=delta_rain_mp,                         &
@@ -766,7 +803,8 @@ module mp_thompson
                               tprv_rev=tprv_rev, tten3=tten3,                                &
                               qvten3=qvten3, qrten3=qrten3, qsten3=qsten3, qgten3=qgten3,    &
                               qiten3=qiten3, niten3=niten3, nrten3=nrten3, ncten3=ncten3,    &
-                              qcten3=qcten3, pfils=pfils, pflls=pflls)
+                              qcten3=qcten3, pfils=pfils, pflls=pflls,                       &
+                              mpicomm=mpicomm, mpirank=mpirank, mpiroot=mpiroot)
          end if
          if (errflg/=0) return
 
@@ -778,6 +816,7 @@ module mp_thompson
          spechum = qv/(1.0_kind_phys+qv)
 
          if (convert_dry_rho) then
+           qa = qa/(1.0_kind_phys+qv)
            qc = qc/(1.0_kind_phys+qv)
            qr = qr/(1.0_kind_phys+qv)
            qi = qi/(1.0_kind_phys+qv)

@@ -137,6 +137,14 @@
   type = real
   kind = kind_phys
   intent = inout
+[qa]
+  standard_name = prognostic_cloud_fraction
+  long_name = prognostic cloud fraction
+  units = frac
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
 [is_aerosol_aware]
   standard_name = flag_for_aerosol_physics
   long_name = flag for aerosol-aware physics
@@ -399,6 +407,14 @@
   standard_name = mass_number_concentration_of_rain_of_new_state
   long_name = rain number concentration
   units = kg-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[qa]
+  standard_name = prognostic_cloud_fraction_of_new_state
+  long_name = prognostic cloud fraction
+  units = frac
   dimensions = (horizontal_loop_extent,vertical_layer_dimension)
   type = real
   kind = kind_phys

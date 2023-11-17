@@ -980,7 +980,7 @@ MODULE module_mp_thompson
 !!This is a wrapper routine designed to transfer values from 3D to 1D.
 !!\section gen_mpgtdriver Thompson mp_gt_driver General Algorithm
 !> @{
-      SUBROUTINE mp_gt_driver(qv, qc, qr, qi, qs, qg, ni, nr, nc,     &
+      SUBROUTINE mp_gt_driver(qv, qa, qc, qr, qi, qs, qg, ni, nr, nc,     &
                               nwfa, nifa, nwfa2d, nifa2d,             &
                               tt, th, pii,                            &
                               p, w, dz, dt_in, dt_inner,              &
@@ -1022,7 +1022,8 @@ MODULE module_mp_thompson
                               tprr_rcs, tprv_rev, tten3, qvten3,      &
                               qrten3, qsten3, qgten3, qiten3, niten3, &
                               nrten3, ncten3, qcten3,                 &
-                              pfils, pflls)
+                              pfils, pflls,                           &
+                              mpicomm, mpirank, mpiroot)
 
       implicit none
 
@@ -1030,8 +1031,9 @@ MODULE module_mp_thompson
       INTEGER, INTENT(IN):: ids,ide, jds,jde, kds,kde, &
                             ims,ime, jms,jme, kms,kme, &
                             its,ite, jts,jte, kts,kte
+      INTEGER, INTENT(IN) :: mpicomm, mpirank, mpiroot
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
-                          qv, qc, qr, qi, qs, qg, ni, nr
+                          qv, qa, qc, qr, qi, qs, qg, ni, nr
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT):: &
                           tt, th
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(IN):: &
@@ -1092,7 +1094,7 @@ MODULE module_mp_thompson
 
 !..Local variables
       REAL, DIMENSION(kts:kte):: &
-                          qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d,     &
+                          qv1d, qa1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d,     &
                           nr1d, nc1d, nwfa1d, nifa1d,                   &
                           t1d, p1d, w1d, dz1d, rho, dBZ, pfil1, pfll1
 !..Extended diagnostics, single column arrays
@@ -1139,6 +1141,8 @@ MODULE module_mp_thompson
       ! CCPP
       if (present(errmsg)) errmsg = ''
       if (present(errflg)) errflg = 0
+
+!!      write(*,*) 'AAJ BEGIN THOMPSON', first_time_step, istep
 
       ! No need to test for every subcycling step
       test_only_once: if (first_time_step .and. istep==1) then
@@ -1363,6 +1367,7 @@ MODULE module_mp_thompson
             w1d(k) = w(i,k,j)
             dz1d(k) = dz(i,k,j)
             qv1d(k) = qv(i,k,j)
+            qa1d(k) = qa(i,k,j)
             qc1d(k) = qc(i,k,j)
             qi1d(k) = qi(i,k,j)
             qr1d(k) = qr(i,k,j)
@@ -1436,7 +1441,7 @@ MODULE module_mp_thompson
          endif
 
 !> - Call mp_thompson()
-         call mp_thompson(qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d,     &
+         call mp_thompson(qv1d, qa1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d,     &
                       nr1d, nc1d, nwfa1d, nifa1d, t1d, p1d, w1d, dz1d,  &
                       lsml, pptrain, pptsnow, pptgraul, pptice, &
 #if ( WRF_CHEM == 1 )
@@ -1509,9 +1514,47 @@ MODULE module_mp_thompson
             enddo
          endif
 
+!         if ((j .eq. j_start) .and. (i .eq. i_start)) then
+!            if (mpirank==mpiroot) then
+!               write(*,*) 'AAJ ROOT', mpirank, j, i
+!            else
+!               write(*,*) 'AAJ MPIRANK', mpirank, j, i
+!            endif
+!            if (present(tt)) then
+!               write(*,*) '    AAJ MEAN TEMPERATURE TT', sum(tt(:,kts,:))/size(tt(:,kts,:))
+!            else
+!               write(*,*) '    AAJ MEAN TEMPERATURE TH', sum(th(:,kts,:))/size(th(:,kts,:))
+!            end if
+!         endif
+
          do k = kts, kte
             qv(i,k,j) = qv1d(k)
+            qa(i,k,j) = qa1d(k)
             qc(i,k,j) = qc1d(k)
+
+!            if (first_time_step) then
+!               if (mpirank .eq. 143) then
+!                  write(*,*) 'AAJ MPI RANK 143 FIRST TIMESTEP', kts, kte
+!                  if ((k .ge. kts) .and. (k .le. (kts+20))) then
+!                     qa(i,k,j) = 0.399
+!                  endif
+!               endif
+!            endif
+
+            ! if (first_time_step) then
+            !    if ((i .eq. 1) .and. (j .eq. 1) .and. (k .eq. kts)) then
+            !       write(*,*) 'AAJ FIRST TIMESTEP'
+            !    endif
+            !    if ((i .ge. 800) .and. (i .le. 1000) .and. (j .ge. 450) .and. (j .le. 650)) then
+            !       if ((k .ge. kts) .and. (k .le. (kts+15))) then
+            !          qa(i,k,j) = 0.399
+            !       endif
+            !    endif
+            ! else
+            !    if ((i .eq. 1) .and. (j .eq. 1) .and. (k .eq. kts)) then
+            !       write(*,*) 'AAJ NOT FIRST TIMESTEP'
+            !    endif
+            ! endif
             qi(i,k,j) = qi1d(k)
             qr(i,k,j) = qr1d(k)
             qs(i,k,j) = qs1d(k)
@@ -1848,7 +1891,7 @@ MODULE module_mp_thompson
 !! Thompson et al. (2004, 2008)\cite Thompson_2004 \cite Thompson_2008.
 !>\section gen_mp_thompson  mp_thompson General Algorithm
 !> @{
-      subroutine mp_thompson (qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d,    &
+      subroutine mp_thompson (qv1d, qa1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d,    &
                           nr1d, nc1d, nwfa1d, nifa1d, t1d, p1d, w1d, dzq,  &
                           lsml, pptrain, pptsnow, pptgraul, pptice,        &
 #if ( WRF_CHEM == 1 )
@@ -1882,7 +1925,7 @@ MODULE module_mp_thompson
 !..Sub arguments
       INTEGER, INTENT(IN):: kts, kte, ii, jj
       REAL, DIMENSION(kts:kte), INTENT(INOUT):: &
-                          qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
+                          qv1d, qa1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
                           nr1d, nc1d, nwfa1d, nifa1d, t1d
       REAL, DIMENSION(kts:kte), INTENT(OUT):: pfil1, pfll1
       REAL, DIMENSION(kts:kte), INTENT(IN):: p1d, w1d, dzq
@@ -2000,7 +2043,7 @@ MODULE module_mp_thompson
                 idx_i1, idx_i, idx_c, idx, idx_d, idx_n, idx_in
 
       LOGICAL:: no_micro
-      LOGICAL, DIMENSION(kts:kte):: L_qc, L_qi, L_qr, L_qs, L_qg
+      LOGICAL, DIMENSION(kts:kte):: L_qc, L_qi, L_qr, L_qs, L_qg, no_micro_k
       LOGICAL:: debug_flag
       INTEGER:: nu_c
 
@@ -2200,9 +2243,12 @@ MODULE module_mp_thompson
          nifa(k) = MAX(naIN1*0.01*rho(k), MIN(9999.E6*rho(k), nifa1d(k)*rho(k)))
          mvd_r(k) = D0r
          mvd_c(k) = D0c
+         no_micro_k(k) = .true.
 
          if (qc1d(k) .gt. R1) then
+!! AAJ            qa1d(k) = 0.399
             no_micro = .false.
+            no_micro_k(k) = .false.
             rc(k) = qc1d(k)*rho(k)
             nc(k) = MAX(2., MIN(nc1d(k)*rho(k), Nt_c_max))
             L_qc(k) = .true.
@@ -2240,6 +2286,7 @@ MODULE module_mp_thompson
 
          if (qi1d(k) .gt. R1) then
             no_micro = .false.
+            no_micro_k(k) = .false.
             ri(k) = qi1d(k)*rho(k)
             ni(k) = MAX(R2, ni1d(k)*rho(k))
             if (ni(k).le. R2) then
@@ -2267,6 +2314,7 @@ MODULE module_mp_thompson
 
          if (qr1d(k) .gt. R1) then
             no_micro = .false.
+            no_micro_k(k) = .false.
             rr(k) = qr1d(k)*rho(k)
             nr(k) = MAX(R2, nr1d(k)*rho(k))
             if (nr(k).le. R2) then
@@ -2295,6 +2343,7 @@ MODULE module_mp_thompson
          endif
          if (qs1d(k) .gt. R1) then
             no_micro = .false.
+            no_micro_k(k) = .false.
             rs(k) = qs1d(k)*rho(k)
             L_qs(k) = .true.
          else
@@ -2304,6 +2353,7 @@ MODULE module_mp_thompson
          endif
          if (qg1d(k) .gt. R1) then
             no_micro = .false.
+            no_micro_k(k) = .false.
             rg(k) = qg1d(k)*rho(k)
             L_qg(k) = .true.
          else
@@ -2345,7 +2395,10 @@ MODULE module_mp_thompson
          ssati(k) = sati(k) - 1.
          if (abs(ssatw(k)).lt. eps) ssatw(k) = 0.0
          if (abs(ssati(k)).lt. eps) ssati(k) = 0.0
-         if (no_micro .and. ssati(k).gt. 0.0) no_micro = .false.
+         if (no_micro .and. ssati(k).gt. 0.0) then
+            no_micro = .false.
+            no_micro_k(k) = .false.
+         endif
          diffu(k) = 2.11E-5*(temp(k)/273.15)**1.94 * (101325./pres(k))
          if (tempc .ge. 0.0) then
             visco(k) = (1.718+0.0049*tempc)*1.0E-5
@@ -2363,6 +2416,58 @@ MODULE module_mp_thompson
 !! condense cloud water, just exit quickly!
 !+---+-----------------------------------------------------------------+
 
+      ! This is set if simple clouds called
+!      rc(k) = R1
+!      nc(k) = 2.
+!      L_qc(k) = .false.
+      
+      ! Creates cloud water, cloud number, and cloud fraction based on Tiedtke
+      ! If simple clouds is called, rc(k) = 1.e-12
+      call simple_clouds(kts, kte, qv, rho, pres, lvap, ocp, temp, qvs, qa1d, rc, nc, w1d, dtsave, no_micro_k)
+
+      ! If we made fake clouds, ensure constistent mass/number
+      ! If fake clouds make rc, set no_micro to false
+      ! Keep no_micro_k to true to represent fake clouds
+      do k = kts, kte
+         if (rc(k) .gt. R1) then
+            no_micro = .false.
+            nc(k) = MAX(2., MIN(nc(k), Nt_c_max))
+            L_qc(k) = .true.
+            if (nc(k).gt.10000.E6) then
+               nu_c = 2
+            elseif (nc(k).lt.100.) then
+               nu_c = 15
+            else
+               nu_c = NINT(1000.E6/nc(k)) + 2
+               nu_c = MAX(2, MIN(nu_c+NINT(rand2), 15))
+            endif
+            lamc = (nc(k)*am_r*ccg(2,nu_c)*ocg1(nu_c)/rc(k))**obmr
+            xDc = (bm_r + nu_c + 1.) / lamc
+            if (xDc.lt. D0c) then
+               lamc = cce(2,nu_c)/D0c
+            elseif (xDc.gt. D0r*2.) then
+               lamc = cce(2,nu_c)/(D0r*2.)
+            endif
+            nc(k) = MIN( DBLE(Nt_c_max), ccg(1,nu_c)*ocg2(nu_c)*rc(k)   &
+                 / am_r*lamc**bm_r)
+            if (.NOT. (is_aerosol_aware .or. merra2_aerosol_aware)) then
+               if (lsml == 1) then
+                  nc(k) = Nt_c_l
+               else
+                  nc(k) = Nt_c_o
+               endif
+            endif
+         else
+            qc1d(k) = 0.0
+            nc1d(k) = 0.0
+            rc(k) = R1
+            nc(k) = 2.
+            qa1d(k) = 0.0
+            L_qc(k) = .false.
+         endif
+      enddo
+
+      ! if no clouds and we didn't make fake clouds either, return
       if (no_micro) return
 
 !+---+-----------------------------------------------------------------+
@@ -3648,10 +3753,14 @@ MODULE module_mp_thompson
           endif
 
 !+---+-----------------------------------------------------------------+
+          ! If cloud water exists, but no_micro_k is true then these are fake clouds
+          ! So we won't let them evaporate
+          if (.not. no_micro_k(k)) then
+             qvten(k) = qvten(k) - prw_vcd(k)
+             qcten(k) = qcten(k) + prw_vcd(k)
+             ncten(k) = ncten(k) + pnc_wcd(k)
+          endif
 
-          qvten(k) = qvten(k) - prw_vcd(k)
-          qcten(k) = qcten(k) + prw_vcd(k)
-          ncten(k) = ncten(k) + pnc_wcd(k)
           if (is_aerosol_aware)                                            &   
             nwfaten(k) = nwfaten(k) - pnc_wcd(k)
           tten(k) = tten(k) + lvap(k)*ocp(k)*prw_vcd(k)*(1-IFDRY)
@@ -6463,7 +6572,192 @@ MODULE module_mp_thompson
 
   END SUBROUTINE semi_lagrange_sedim
 
+
+
+  subroutine simple_clouds(kts, kte, qv, rho, pres, lvap, ocp, temp, qvs, qa, rc, nc, w1d, dt_inner, no_micro_k)
+
+    implicit none
+      
+    ! Input
+    integer, intent(in) :: kts, kte
+    real, intent(in) :: rho(:), pres(:), lvap(:), ocp(:), qvs(:), w1d(:), dt_inner
+    logical, intent(in) :: no_micro_k(:)
+    real, intent(inout) :: qa(:), rc(:), qv(:), temp(:), nc(:)
+
+    ! Local
+    integer :: k
+    real :: dcond_ls(kts:kte), qa_tend(kts:kte)
+    real :: dqsdT(kts:kte), gamm(kts:kte), U(kts:kte), U00(kts:kte), omega(kts:kte)
+    real :: dqs_ls(kts:kte), tmp1(kts:kte), D_eros(kts:kte), A_dt(kts:kte), B_dt(kts:kte)
+    real :: qa0(kts:kte), qaeq(kts:kte), qa1(kts:kte), qabar(kts:kte), da_ls(kts:kte)
+
+    logical :: do_subgrid_clouds(kts:kte)
+    real :: con_eps = 0.608
+    real :: con_rd = 287.
+    real :: grav = 9.8
+    real :: cp_air = 1004.
+    real :: rvgas = 461.50
+    real :: hlv = 2.5e6
+      
+    do k = kts, kte
+       ! Process rates
+       dcond_ls(k) = 0.
+       qa_tend(k) = 0.
+       
+       dqsdT(k) = lvap(k) * qvs(k) / (rvgas*temp(k)**2)      
+       gamm(k) = dqsdT(k) * lvap(k) * ocp(k)
+       U(k) = qv(k) / qvs(k)
+       U00(k) = 0.5
+
+       omega(k) = -w1d(k)*rho(k)*grav
+
+       
+       ! Flag for subgrid
+       do_subgrid_clouds(k) = .false.
+       
+       ! Bound on cloud fraction always
+       qa(k) = min(max(qa(k),0.),1.)
+       
+       ! Make/destroy subgrid clouds where RH < 100%, temperature > -20C, cloud fraction < 1
+       ! Otherwise, let microphysics handle things
+!       if(U(k).le.1..and.tgrs(i,k).gt.253.15) then
+!          do_subgrid_clouds(i,k) = .true.
+!       endif
+
+       ! Only make liquid subgrid clouds if temperature > -20C, RH > 50%, no explicit microphysics called in grid box
+       if(temp(k).gt.253.15 .and. no_micro_k(k) .and. U(k).ge.U00(k)) then
+          do_subgrid_clouds(k) = .true.
+       endif
+       
+       !            if(U(i,k).gt.1.002.and.qc(i,k).gt.1.e-4) then
+       !               qa(i,k) = 1.
+       !            endif
+       
+       ! Zero out cloud fraction if rc < 1.e-12 kg/kg
+       ! Always do this for consistency
+       if (rc(k).le.1.e-12) then
+          qa(k) = 0.
+       endif
+       
+    enddo
+    
+    do k = kts, kte
+       if (do_subgrid_clouds(k)) then
+
+          ! Floor value for cloud fraction of 1%
+          if (rc(k).gt.1.e-12) then
+             qa(k) = max(qa(k), 0.01)
+          endif
+
+          ! Check on qc
+!          if(rc(k).le.1.e-12) then
+!             qv(k) = qv(k) + rc(k)
+!             temp(k) = temp(k) - lvap(k)*ocp(k)*rc(k)
+!             rc(k) = 0.
+!             qa(k) = 0.
+!             nc(k) = 0.
+!          else
+!             if(qa(k).lt.0.001) then
+!                qa(k) = 0.001
+!             endif
+!          endif
+          
+          ! check on qv
+!          if(qv(i,k).lt.1.e-10) then
+!             qv(i,k) = 1.e-10
+!          endif
+          
+          ! can we assume that in-cloud value are coming in (change here to grid values)
+          !               rc(k) = rc(k)*qa(k)
+          
+          ! Calculation
+          dqs_ls(k) = (omega(k)/rho(k)*ocp(k))*dt_inner*dqsdT(k)
+          if (dqs_ls(k).lt.0..and.U(k).ge.U00(k).and.qa(k).lt.1.)  then
+             tmp1(k) = sqrt( (1. + qa(k)*gamm(k))**2. - (1. - qa(k))*(1. - qa(k))*gamm(k)*dqs_ls(k)/qvs(k)/max(1.-U(k), 1.e-12)) - (1. + qa(k)* gamm(k))
+             tmp1(k) = -1.*tmp1(k)/((1. - qa(k))*(1. - qa(k))*gamm(k)/qvs(k)/max(1. - U(k), 1.e-12)/2.)
+             dqs_ls(k) = min(tmp1(k),dqs_ls(k)/(1. +0.5*(1. + qa(k))* gamm(k)))
+          else
+             dqs_ls(k) = dqs_ls(k)/(1. + qa(k)*gamm(k))
+          endif
+          
+          if ((dqs_ls(k).le.0..and.U(k).ge.U00(k)).and.(qa(k).le.1.)) then
+             da_ls(k) = -0.5*(1. - qa(k))*(1. - qa(k))* dqs_ls(k)/qvs(k) / max(1.-U(k), 1.e-12)
+          else
+             da_ls(k) = 0.
+          endif
+          
+          ! Erosion
+          D_eros(k) = 0.
+          if (rc(k).gt.1.e-12) then
+             D_eros(k) = -1.e-6*qa(k)*(qvs(k)-qv(k))*qa(k) / rc(k)
+          endif
+          
+          A_dt(k) = da_ls(k) / max((1.-qa(k)), 1.e-12)
+! AAJ NO EROSION          B_dt(k) = 1.e-5
+          B_dt(k) = 0.
+          
+          !------------------------------------------------------------------------
+          !    do analytic integration.      
+          !------------------------------------------------------------------------
+          if ( (A_dt(k) .gt. 1.e-12) .or. (B_dt(k) .gt.1.e-12 ) )  then
+             qa0(k) = qa(k)
+             qaeq(k) = A_dt(k)/(A_dt(k)  + B_dt(k))
+             qa1(k) = qaeq(k) - (qaeq(k) - qa0(k)) * exp ( -1.*(A_dt(k)+B_dt(k)) )
+             qabar(k) = qaeq(k) - ((qa1(k) - qa0(k))/ (A_dt(k) + B_dt(k)))
+          else
+             qa0(k)   = qa(k)
+             qaeq(k)  = qa0(k)
+             qa1(k)   = qa0(k)   
+             qabar(k) = qa0(k)  
+          endif
+          
+          ! Add tendencies where doing subgrid clouds
+          qa_tend(k) = (qa1(k)-qa0(k)) / dt_inner
+          dcond_ls(k) = -1. * qabar(k) * dqs_ls(k)
+          
+          ! Limit loss of condensation based on available cloud water
+          if ((-1.*dcond_ls(k)*dt_inner).gt.rc(k)) then
+             dcond_ls(k) = -rc(k)/dt_inner
+          endif
+          
+          ! Likely needed cloud fraction destruction
+          !               if (dcond_ls(k).lt.0..and.rc(k).gt.1.e-12) then
+          !                  qa_tend(k) = dcond_ls(k)/rc(k)*qa(k)
+          !               endif
+          
+          qa(k) = qa(k) + qa_tend(k)*dt_inner
+          rc(k) = rc(k) + dcond_ls(k)*dt_inner
+          qv(k) = qv(k) - dcond_ls(k)*dt_inner
+          temp(k) = temp(k) + lvap(k)*ocp(k)*dcond_ls(k)*dt_inner
+          
+          ! Send in-cloud values out
+          !               if (qa(k).gt.0.001) then
+          !                  rc(k) = rc(k)/qa(k)
+          !               else
+          !                  qa(k) = 0.
+          !               endif
+          
+          if (rc(k).le.1.e-12) then
+             qa(k) = 0.
+             nc(k) = 0.
+          else
+             nc(k) = 10.e6
+          endif
+          
+!       else
+!          if (rc(k).le.1.e-12) then
+!             qa(k) = 0.
+!          endif
+       endif
+
+    enddo
+
+      !-----------------------------------------------------------------------
+  end subroutine simple_clouds
+
 !+---+-----------------------------------------------------------------+
 !+---+-----------------------------------------------------------------+
 END MODULE module_mp_thompson
 !+---+-----------------------------------------------------------------+
+
+ 
