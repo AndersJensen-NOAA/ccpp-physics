@@ -2,7 +2,7 @@
   name = GFS_rrtmgp_setup
   type = scheme
   dependencies = iounitdef.f,machine.F,module_bfmicrophysics.f,radiation_aerosols.f,radiation_astronomy.f
-  dependencies = module_mp_thompson.F90,radiation_gases.f,module_ozphys.F90
+  dependencies = cldmp_thompson/module_mp_thompson.F90,radiation_gases.f,module_ozphys.F90
 
 ########################################################################
 [ccpp-arg-table]

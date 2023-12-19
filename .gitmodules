@@ -2,3 +2,6 @@
   path = physics/rte-rrtmgp
   url = https://github.com/earth-system-radiation/rte-rrtmgp
   branch = main
+[submodule "physics/cldmp_thompson"]
+  path = physics/cldmp_thompson
+  url = https://github.com/dustinswales/cloud_microphysics

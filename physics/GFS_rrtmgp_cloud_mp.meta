@@ -1,7 +1,7 @@
 [ccpp-table-properties]
   name = GFS_rrtmgp_cloud_mp
   type = scheme
-  dependencies = radiation_tools.F90, radiation_clouds.f, module_mp_thompson_make_number_concentrations.F90, module_mp_thompson.F90, rrtmgp_lw_cloud_optics.F90
+  dependencies = radiation_tools.F90, radiation_clouds.f, module_mp_thompson_make_number_concentrations.F90, cldmp_thompson/module_mp_thompson.F90, rrtmgp_lw_cloud_optics.F90
 
 ########################################################################
 [ccpp-arg-table]
