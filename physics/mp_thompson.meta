@@ -1,7 +1,8 @@
 [ccpp-table-properties]
   name = mp_thompson
   type = scheme
-  dependencies = machine.F,module_mp_radar.F90,module_mp_thompson.F90,module_mp_thompson_make_number_concentrations.F90
+  dependencies = machine.F,module_mp_thompson_make_number_concentrations.F90
+  dependencies = GSL_cloud_physics/module_mp_radar.F90,GSL_cloud_physics/module_mp_thompson.F90
 
 ########################################################################
 [ccpp-arg-table]
