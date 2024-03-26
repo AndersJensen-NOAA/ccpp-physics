@@ -2,3 +2,7 @@
   path = physics/Radiation/RRTMGP/rte-rrtmgp
   url = https://github.com/earth-system-radiation/rte-rrtmgp
   branch = main
+[submodule "physics/MP/Thompson/GSL_cloud_physics"]
+  path = physics/MP/Thompson/GSL_cloud_physics
+  url = https://github.com/AndersJensen-NOAA/GSL_cloud_physics.git
+  branch = develop

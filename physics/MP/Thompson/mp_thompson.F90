@@ -33,7 +33,7 @@ module mp_thompson
       subroutine mp_thompson_init(ncol, nlev, con_g, con_rd, con_eps,      &
                                   restart, imp_physics,                    &
                                   imp_physics_thompson, convert_dry_rho,   &
-                                  spechum, qc, qr, qi, qs, qg, ni, nr,     &
+                                  spechum, qc, qr, qi, qs, qg, qb, ni, nr, ng,    &
                                   is_aerosol_aware,  merra2_aerosol_aware, &
                                   nc, nwfa2d, nifa2d,                      &
                                   nwfa, nifa, tgrs, prsl, phil, area,      &
@@ -58,6 +58,8 @@ module mp_thompson
          real(kind_phys),           intent(inout) :: qi(:,:)
          real(kind_phys),           intent(inout) :: qs(:,:)
          real(kind_phys),           intent(inout) :: qg(:,:)
+         real(kind_phys),           intent(inout) :: qb(:,:)
+         real(kind_phys),           intent(inout) :: ng(:,:)
          real(kind_phys),           intent(inout) :: ni(:,:)
          real(kind_phys),           intent(inout) :: nr(:,:)
          ! Aerosols
@@ -167,6 +169,9 @@ module mp_thompson
 
            ni = ni/(1.0_kind_phys-spechum)
            nr = nr/(1.0_kind_phys-spechum)
+           qb = qb/(1.0_kind_phys-spechum)
+           ng = ng/(1.0_kind_phys-spechum)
+
            if (is_aerosol_aware .or. merra2_aerosol_aware) then
               nc = nc/(1.0_kind_phys-spechum)
               nwfa = nwfa/(1.0_kind_phys-spechum)
@@ -299,6 +304,8 @@ module mp_thompson
 
            ni = ni/(1.0_kind_phys+qv)
            nr = nr/(1.0_kind_phys+qv)
+           qb = qb/(1.0_kind_phys+qv)
+           ng = ng/(1.0_kind_phys+qv)
            if (is_aerosol_aware .or. merra2_aerosol_aware) then
               nc = nc/(1.0_kind_phys+qv)
               nwfa = nwfa/(1.0_kind_phys+qv)
@@ -319,7 +326,7 @@ module mp_thompson
 !>@{
       subroutine mp_thompson_run(ncol, nlev, con_g, con_rd,        &
                               con_eps, convert_dry_rho,            &
-                              spechum, qc, qr, qi, qs, qg, ni, nr, &
+                              spechum, qc, qr, qi, qs, qg, qb, ni, nr, ng, &
                               is_aerosol_aware,                    &
                               merra2_aerosol_aware, nc, nwfa, nifa,&
                               nwfa2d, nifa2d, aero_ind_fdb,        &
@@ -357,6 +364,8 @@ module mp_thompson
          real(kind_phys),           intent(inout) :: qi(:,:)
          real(kind_phys),           intent(inout) :: qs(:,:)
          real(kind_phys),           intent(inout) :: qg(:,:)
+         real(kind_phys),           intent(inout) :: qb(:,:)
+         real(kind_phys),           intent(inout) :: ng(:,:)
          real(kind_phys),           intent(inout) :: ni(:,:)
          real(kind_phys),           intent(inout) :: nr(:,:)
          ! Aerosols
@@ -578,6 +587,8 @@ module mp_thompson
            qi = qi/(1.0_kind_phys-spechum)
            qs = qs/(1.0_kind_phys-spechum)
            qg = qg/(1.0_kind_phys-spechum)
+           qb = qb/(1.0_kind_phys-spechum)
+           ng = ng/(1.0_kind_phys-spechum)
 
            ni = ni/(1.0_kind_phys-spechum)
            nr = nr/(1.0_kind_phys-spechum)
@@ -690,7 +701,7 @@ module mp_thompson
          end if set_extended_diagnostic_pointers
          !> - Call mp_gt_driver() with or without aerosols, with or without effective radii, ...
          if (is_aerosol_aware .or. merra2_aerosol_aware) then
-            call mp_gt_driver(qv=qv, qc=qc, qr=qr, qi=qi, qs=qs, qg=qg, ni=ni, nr=nr,        &
+            call mp_gt_driver(qv=qv, qc=qc, qr=qr, qi=qi, qs=qs, qg=qg, qb=qb, ni=ni, nr=nr, ng=ng,       &
                               nc=nc, nwfa=nwfa, nifa=nifa, nwfa2d=nwfa2d, nifa2d=nifa2d,     &
                               tt=tgrs, p=prsl, w=w, dz=dz, dt_in=dtstep, dt_inner=dt_inner,  &
                               sedi_semi=sedi_semi, decfl=decfl, lsm=islmsk,                  &
@@ -732,7 +743,7 @@ module mp_thompson
                               qiten3=qiten3, niten3=niten3, nrten3=nrten3, ncten3=ncten3,    &
                               qcten3=qcten3, pfils=pfils, pflls=pflls)
          else
-            call mp_gt_driver(qv=qv, qc=qc, qr=qr, qi=qi, qs=qs, qg=qg, ni=ni, nr=nr,        &
+            call mp_gt_driver(qv=qv, qc=qc, qr=qr, qi=qi, qs=qs, qg=qg, qb=qb, ni=ni, nr=nr,  ng=ng,      &
                               tt=tgrs, p=prsl, w=w, dz=dz, dt_in=dtstep, dt_inner=dt_inner,  &
                               sedi_semi=sedi_semi, decfl=decfl, lsm=islmsk,                  &
                               rainnc=rain_mp, rainncv=delta_rain_mp,                         &
@@ -787,6 +798,8 @@ module mp_thompson
            qi = qi/(1.0_kind_phys+qv)
            qs = qs/(1.0_kind_phys+qv)
            qg = qg/(1.0_kind_phys+qv)
+           qb = qb/(1.0_kind_phys+qv)
+           ng = ng/(1.0_kind_phys+qv)
 
            ni = ni/(1.0_kind_phys+qv)
            nr = nr/(1.0_kind_phys+qv)

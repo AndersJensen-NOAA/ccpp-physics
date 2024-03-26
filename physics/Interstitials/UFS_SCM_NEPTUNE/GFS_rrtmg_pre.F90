@@ -72,8 +72,8 @@
       use surface_perturbation,      only: cdfnor,ppfbet
 
       ! For Thompson MP
-      use module_mp_thompson,        only: calc_effectRad,           &
-                                           Nt_c_l, Nt_c_o,           &
+      use module_mp_thompson_main,   only: calc_effectRad            
+      use module_mp_thompson_params, only: Nt_c_l, Nt_c_o,           &
                                            re_qc_min, re_qc_max,     &
                                            re_qi_min, re_qi_max,     &
                                            re_qs_min, re_qs_max
@@ -899,9 +899,12 @@
             !tgs: progclduni has different limits for ice radii (10.0-150.0) than
             !     calc_effectRad (4.99-125.0 for WRFv3.8.1; 2.49-125.0 for WRFv4+)
             !     it will raise the low limit from 5 to 10, but the high limit will remain 125.
+!            call calc_effectRad (tlyr(i,:), plyr(i,:)*100., qv_mp(i,:), qc_mp(i,:),   &
+!                                 nc_mp(i,:), qi_mp(i,:), ni_mp(i,:), qs_mp(i,:), &
+!                                 effrl(i,:), effri(i,:), effrs(i,:), islmsk, 1, lm )
             call calc_effectRad (tlyr(i,:), plyr(i,:)*100., qv_mp(i,:), qc_mp(i,:),   &
                                  nc_mp(i,:), qi_mp(i,:), ni_mp(i,:), qs_mp(i,:), &
-                                 effrl(i,:), effri(i,:), effrs(i,:), islmsk, 1, lm )
+                                 effrl(i,:), effri(i,:), effrs(i,:), 1, lm )
             ! Scale Thompson's effective radii from meter to micron
             do k=1,lm
               effrl(i,k) = MAX(re_qc_min, MIN(effrl(i,k), re_qc_max))*1.e6
