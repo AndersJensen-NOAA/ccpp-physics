@@ -12,9 +12,9 @@ module GFS_rrtmgp_cloud_mp
   use rrtmgp_lw_cloud_optics, only: &
        radliq_lwr => radliq_lwrLW, radliq_upr => radliq_uprLW,&
        radice_lwr => radice_lwrLW, radice_upr => radice_uprLW  
-  use module_mp_thompson_utils, only: calc_effectRad, make_IceNumber,         &
+  use module_mp_tempo_utils, only: calc_effectRad, make_IceNumber,         &
        make_DropletNumber, make_RainNumber
-  use module_mp_thompson_params, only: Nt_c_l, Nt_c_o, re_qc_min, re_qc_max,  &
+  use module_mp_tempo_params, only: Nt_c_l, Nt_c_o, re_qc_min, re_qc_max,  &
        re_qi_min, re_qi_max, re_qs_min, re_qs_max, configs
 
   

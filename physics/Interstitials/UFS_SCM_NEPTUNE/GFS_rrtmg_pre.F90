@@ -89,7 +89,7 @@
 
       ! For TEMPO MP
       ! DJS to Anders: Change from Thompson -> TEMPO in submodule, propogate change here.
-      use module_mp_thompson_params, only: Nt_c_l_tempo             => Nt_c_l,     &
+      use module_mp_tempo_params, only: Nt_c_l_tempo             => Nt_c_l,     &
                                            Nt_c_o_tempo             => Nt_c_o,     &
                                            re_qc_min_tempo          => re_qc_min,  &
                                            re_qc_max_tempo          => re_qc_max,  &
@@ -97,7 +97,7 @@
                                            re_qi_max_tempo          => re_qi_max,  &
                                            re_qs_min_tempo          => re_qs_min,  &
                                            re_qs_max_tempo          => re_qs_max
-      use module_mp_thompson_utils, only:  calc_effectRad_tempo     => calc_effectRad,     &
+      use module_mp_tempo_utils, only:  calc_effectRad_tempo     => calc_effectRad,     &
                                            make_IceNumber_tempo     => make_IceNumber,     &
                                            make_DropletNumber_tempo => make_DropletNumber, &
                                            make_RainNumber_tempo    => make_RainNumber

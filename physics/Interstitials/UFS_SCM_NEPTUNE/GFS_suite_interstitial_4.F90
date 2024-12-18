@@ -19,7 +19,7 @@
       use module_mp_thompson_make_number_concentrations, only: &
            make_IceNumber_thmpsn     => make_IceNumber, &
            make_DropletNumber_thmpsn => make_DropletNumber
-      use module_mp_thompson_utils, only: &
+      use module_mp_tempo_utils, only: &
            make_IceNumber_tempo      => make_IceNumber, &
            make_DropletNumber_tempo  => make_DropletNumber
       implicit none

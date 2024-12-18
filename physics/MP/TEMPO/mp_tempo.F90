@@ -9,9 +9,9 @@ module mp_tempo
       use mpi_f08
       use machine, only : kind_phys
 
-      use module_mp_thompson_params
-      use module_mp_thompson_utils
-      use module_mp_thompson_main
+      use module_mp_tempo_params
+      use module_mp_tempo_utils
+      use module_mp_tempo_main
       use module_mp_tempo
 
       implicit none
