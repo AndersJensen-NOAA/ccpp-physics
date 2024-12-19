@@ -553,7 +553,7 @@ contains
     ! Required microphysics variables are qv, qc, qr, nr, qi, ni, qs, qg
     ! Optional microphysics variables are aerosol aware (nc, nwfa, nifa, nwfa2d, nifa2d), and hail aware (ng, qg)
 
-    subroutine mp_gt_driver(qv, qc, qr, qi, qs, qg, qb, ni, nr, nc, ng, &
+    subroutine tempo_3d_to_1d_driver(qv, qc, qr, qi, qs, qg, qb, ni, nr, nc, ng, &
         nwfa, nifa, nwfa2d, nifa2d,             &
         tt, th, pii,                            &
         p, w, dz, dt_in, dt_inner,              &
@@ -1393,7 +1393,7 @@ contains
             deallocate (qcten1)
         end if deallocate_extended_diagnostics
 
-    END SUBROUTINE mp_gt_driver
+    END SUBROUTINE tempo_3d_to_1d_driver
     !> @}
 
     !>\ingroup aathompson

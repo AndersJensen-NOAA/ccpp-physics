@@ -32,7 +32,7 @@ module mp_tempo
 !!
       subroutine mp_tempo_init(ncol, nlev, con_g, con_rd, con_eps,      &
                                   restart, imp_physics,                    &
-                                  imp_physics_thompson, convert_dry_rho,   &
+                                  imp_physics_tempo, convert_dry_rho,   &
                                   spechum, qc, qr, qi, qs, qg, ni, nr,     &
                                   chw, vh, &
                                   is_aerosol_aware,  merra2_aerosol_aware, &
@@ -51,7 +51,7 @@ module mp_tempo
          real(kind_phys),           intent(in   ) :: con_g, con_rd, con_eps
          logical,                   intent(in   ) :: restart
          integer,                   intent(in   ) :: imp_physics
-         integer,                   intent(in   ) :: imp_physics_thompson
+         integer,                   intent(in   ) :: imp_physics_tempo
          ! Hydrometeors
          logical,                   intent(in   ) :: convert_dry_rho
          real(kind_phys),           intent(inout) :: spechum(:,:)
@@ -109,8 +109,8 @@ module mp_tempo
          if (is_initialized) return
 
          ! Consistency checks
-         if (imp_physics/=imp_physics_thompson) then
-            write(errmsg,'(*(a))') "Logic error: namelist choice of microphysics is different from Thompson MP"
+         if (imp_physics/=imp_physics_tempo) then
+            write(errmsg,'(*(a))') "Logic error: namelist choice of microphysics is different from Tempo MP"
             errflg = 1
             return
          end if
@@ -716,7 +716,7 @@ module mp_tempo
          !> - Call mp_gt_driver() with or without aerosols, with or without effective radii, ...
          if (is_aerosol_aware .or. merra2_aerosol_aware) then
             if (is_hail_aware) then
-               call mp_gt_driver(qv=qv, qc=qc, qr=qr, qi=qi, qs=qs, qg=qg, qb=vh, ni=ni, nr=nr,        &
+               call tempo_3d_to_1d_driver(qv=qv, qc=qc, qr=qr, qi=qi, qs=qs, qg=qg, qb=vh, ni=ni, nr=nr,        &
                               nc=nc, ng=chw, nwfa=nwfa, nifa=nifa, nwfa2d=nwfa2d, nifa2d=nifa2d,     &
                               tt=tgrs, p=prsl, w=w, dz=dz, dt_in=dtstep, dt_inner=dt_inner,  &
                               sedi_semi=sedi_semi, decfl=decfl, lsm=islmsk,                  &
@@ -758,7 +758,7 @@ module mp_tempo
                               qiten3=qiten3, niten3=niten3, nrten3=nrten3, ncten3=ncten3,    &
                               qcten3=qcten3, pfils=pfils, pflls=pflls)
             else
-               call mp_gt_driver(qv=qv, qc=qc, qr=qr, qi=qi, qs=qs, qg=qg, ni=ni, nr=nr,     &
+               call tempo_3d_to_1d_driver(qv=qv, qc=qc, qr=qr, qi=qi, qs=qs, qg=qg, ni=ni, nr=nr,     &
                               nc=nc, nwfa=nwfa, nifa=nifa, nwfa2d=nwfa2d, nifa2d=nifa2d,     &
                               tt=tgrs, p=prsl, w=w, dz=dz, dt_in=dtstep, dt_inner=dt_inner,  &
                               sedi_semi=sedi_semi, decfl=decfl, lsm=islmsk,                  &
@@ -801,7 +801,7 @@ module mp_tempo
                               qcten3=qcten3, pfils=pfils, pflls=pflls)
             endif
          else
-            call mp_gt_driver(qv=qv, qc=qc, qr=qr, qi=qi, qs=qs, qg=qg, ni=ni, nr=nr,        &
+            call tempo_3d_to_1d_driver(qv=qv, qc=qc, qr=qr, qi=qi, qs=qs, qg=qg, ni=ni, nr=nr,        &
                               tt=tgrs, p=prsl, w=w, dz=dz, dt_in=dtstep, dt_inner=dt_inner,  &
                               sedi_semi=sedi_semi, decfl=decfl, lsm=islmsk,                  &
                               rainnc=rain_mp, rainncv=delta_rain_mp,                         &
