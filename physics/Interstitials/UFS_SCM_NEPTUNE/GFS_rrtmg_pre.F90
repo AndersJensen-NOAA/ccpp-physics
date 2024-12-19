@@ -102,6 +102,7 @@
                                            make_DropletNumber_tempo => make_DropletNumber, &
                                            make_RainNumber_tempo    => make_RainNumber
 
+      use module_mp_tempo_params, only: ty_tempo_cfg
 
       ! For NRL Ozone
       use module_ozphys, only: ty_ozphys
